@@ -10,4 +10,4 @@ day1-test: day1-build
 	./dut_tb/dut_tb
 
 day1-lint:
-	verilator -Wall --lint-only day1.sv
+	verilator -Wall --lint-only day1.sv day1_2.sv

@@ -46,11 +46,11 @@ logic [31:0] acc;
 logic [3:0] first_dig;
 logic [3:0] second_dig;
 
-logic [4:0][7:0] sliding_window;
+logic [3:0][7:0] sliding_window;
 
 // convienient functions
 logic is_number;
-logic [7:0] num_shift;
+logic [3:0] num_shift;
 
 assign is_number = (tdata_rx <= `UPPER_BOUND && tdata_rx >= `LOWER_BOUND);
 assign num_shift = (tdata_rx - 8'h30);
@@ -111,7 +111,7 @@ always @(posedge clk) begin
     case (state)
       FIRST_DIG_SEARCH: begin
         tready_rx <= 1'b1;
-        if(tvalid_rx) sliding_window <= {sliding_window[3:0], tdata_rx};
+        if(tvalid_rx) sliding_window <= {sliding_window[2:0], tdata_rx};
 
         if(tvalid_rx && (is_number || is_number_text)) begin
           if(is_number) begin
@@ -131,7 +131,7 @@ always @(posedge clk) begin
       end
       SECOND_DIG_SEARCH: begin
         tready_rx <= 1'b1;
-        if(tvalid_rx) sliding_window <= {sliding_window[3:0], tdata_rx};
+        if(tvalid_rx) sliding_window <= {sliding_window[2:0], tdata_rx};
 
         if(tvalid_rx && (is_number || is_number_text)) begin
           if(is_number) begin
@@ -156,9 +156,9 @@ always @(posedge clk) begin
         end
 
         if(second_dig == 4'hF) begin
-          acc <= acc + (first_dig * 4'd10) + first_dig;
+          acc <= acc + (first_dig * 4'd10) + {28'd0, first_dig};
         end
-        else acc <= acc + (first_dig * 4'd10) + second_dig;
+        else acc <= acc + (first_dig * 4'd10) + {28'd0, second_dig};
 
         second_dig <= 4'hF;
         first_dig <= 4'h0;

@@ -34,9 +34,10 @@ logic [3:0] second_dig;
 
 // convienient functions
 logic is_number;
-logic [7:0] num_shift;
+logic [3:0] num_shift;
 
 assign is_number = (tdata_rx <= `UPPER_BOUND && tdata_rx >= `LOWER_BOUND);
+
 assign num_shift = (tdata_rx - 8'h30);
 
 always @(posedge clk) begin
@@ -80,9 +81,9 @@ always @(posedge clk) begin
         // tready_rx <= 1'b0;
 
         if(second_dig == 4'hF) begin
-          acc <= acc + (first_dig * 4'd10) + first_dig;
+          acc <= acc + (first_dig * 4'd10) + {28'd0, first_dig};
         end
-        else acc <= acc + (first_dig * 4'd10) + second_dig;
+        else acc <= acc + (first_dig * 4'd10) + {28'd0, second_dig};
 
         second_dig <= 4'hF;
         first_dig <= 4'h0;
