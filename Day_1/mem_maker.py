@@ -7,6 +7,9 @@ mem = open("day1.mem", "w")
 
 line_counter = 0
 
+for letter in "ONE":
+    print(hex(ord(letter)))
+
 for line in prompt:
     conv_line = []
     for letter in line.strip():

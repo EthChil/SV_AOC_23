@@ -1,8 +1,9 @@
 `timescale 1 ps / 1 ps
 
 `define MEM_LENGTH 21529
-// `define MEM_LENGTH 48
-
+// `define MEM_LENGTH 93
+`define PART2
+// `define PART1
 
 module dut_tb
 (
@@ -78,6 +79,7 @@ always @(negedge clk) begin
   end
 end
 
+`ifdef PART1
 day1 dut (
   .clk(clk),
   .rst(rst),
@@ -94,6 +96,28 @@ day1 dut (
   .tdata_tx(tdata_tx),
   .tlast_tx(tlast_tx)
 );
+`endif
+
+`ifdef PART2
+day1_2 dut (
+  .clk(clk),
+  .rst(rst),
+
+  // axis input
+  .tvalid_rx(tvalid_rx),
+  .tready_rx(tready_rx),
+  .tdata_rx(tdata_rx),
+  .tlast_rx(tlast_rx),
+
+  // axis output
+  .tvalid_tx(tvalid_tx),
+  .tready_tx(tready_tx),
+  .tdata_tx(tdata_tx),
+  .tlast_tx(tlast_tx)
+);
+`endif
+
+
 
   final begin
     $writememb("result.mem", result);
