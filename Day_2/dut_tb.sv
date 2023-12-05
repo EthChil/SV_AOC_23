@@ -1,7 +1,9 @@
 `timescale 1 ps / 1 ps
 
-`define MEM_LENGTH 21529
-// `define MEM_LENGTH 93
+`define FILE_NAME "day2.mem"
+
+`define MEM_LENGTH 10814
+// `define MEM_LENGTH 321
 `define PART2
 // `define PART1
 
@@ -32,7 +34,7 @@ typedef enum {WRITE, READ} state_t;
 state_t state;
 
 initial begin
-  $readmemh("day1.mem", mem0);
+  $readmemh(`FILE_NAME, mem0);
 end
 
 always @(negedge clk) begin
@@ -80,7 +82,7 @@ always @(negedge clk) begin
 end
 
 `ifdef PART1
-day1 dut (
+day2pt1 dut (
   .clk(clk),
   .rst(rst),
 
@@ -99,7 +101,7 @@ day1 dut (
 `endif
 
 `ifdef PART2
-day1_2 dut (
+day2pt2 dut (
   .clk(clk),
   .rst(rst),
 

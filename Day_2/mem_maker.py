@@ -1,6 +1,8 @@
 import sys
 
 def encode(prompt, output):
+    line_counter = 0
+
     for line in prompt:
         conv_line = []
         for letter in line.strip():
@@ -21,8 +23,6 @@ prompt_legit = open("my_input.txt", "r")
 
 mem_test = open("test.mem", "w")
 mem_legit = open("day2.mem", "w") 
-
-line_counter = 0
 
 for letter in "ONE":
     print(hex(ord(letter)))
