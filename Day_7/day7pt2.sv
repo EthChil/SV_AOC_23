@@ -1,9 +1,5 @@
 `timescale 1 ps / 1 ps
 
-// day sepcific
-`define LINE_LEN 140
-`define NUM_PTR 16
-
 `define LOWER_BOUND_NUM 8'h30
 `define UPPER_BOUND_NUM 8'h39
 
@@ -18,11 +14,8 @@
 // 247 too low
 
 `define SPACE 8'h20
-`define PERIOD 8'h2E
 
-`define NUM_LINES 100
-
-module day3pt1 (
+module day2pt2(
   input  logic clk,
   input  logic rst,
 
@@ -39,66 +32,40 @@ module day3pt1 (
   output logic tlast_tx
 );
 
-// 3 line buffers this stores unmatched digits ptr locations
-logic [`LINE_LEN-1:0][$clog2(`NUM_PTR)-1:0] pipe [3];
-
-// memory holds the values of pointers assume no number is larger than 32 bits
-logic [31:0] memory [`NUM_PTR];
-logic [$clog2(`NUM_PTR)-1:0] ptr; // ptr is current pointer location to use
-
-// parse_pipe holds the pipe line being read in currently
-logic [`LINE_LEN-1:0][$clog2(`NUM_PTR)-1:0] parse_pipe;
-
 logic [31:0] acc;
+logic [31:0] pow;
 logic [7:0] read_val;
 logic [3:0] num_shift;
 
-logic is_number, is_space, is_period;
+logic [7:0] red_max;
+logic [7:0] blue_max;
+logic [7:0] green_max;
+
+logic is_number, is_space;
 
 assign is_number = (tdata_rx <= `UPPER_BOUND_NUM && tdata_rx >= `LOWER_BOUND_NUM);
 assign is_space = (tdata_rx == `SPACE);
-assign is_period = (tdata_rx == `PERIOD);
 assign num_shift = (tdata_rx - 8'h30);
 
-typedef enum {PARSE, HANDLE_PART, ACCUM_PART, SHIFT_PIPE, OUTPUT_RESULT} accum_t;
 
-typedef enum {PARSE, HANDLE_NUMBER, SHIFT_PIPE} parse_t;
-
-// PARSE -> actively reading into the parse_pipe and looking for parts on middle row (part is read to an FF)
-// HANLDE_PART -> when a part is seen jump to handle part which will increment cell_loc and jump to accumulate part
-// ACCUM_PART -> resolve pointer and accumulate jumps back to handle part
-// SHIFT_PIPE -> once line is parsed shift the pipe up
-
-// PARSE <-> HANDLE_PART <-> ACCUM_PART
-// HANDLE_PART will jump to OUTPUT_RESULT once all lines are parsed
+typedef enum {PARSE_FRONT, READ_NUMBER_1, READ_NUMBER_2, READ_COLOUR, OUTPUT_RESULT} state_t;
 
 // state machine register
-accum_t a_state;
-parse_t p_state;
-
-always @(posedge clk) begin
-  if(rst) begin
-    a_state <= PARSE;
-  end else begin
-
-  end
-end
+state_t state;
 
 always @(posedge clk) begin
   if(rst) begin
     // reset state and accumulator
-    state <= PARSE;
+    state <= PARSE_FRONT;
     acc <= '0;
+    pow <= '0;
 
-    ptr <= '0;
+    red_max <= '0;
+    blue_max <= '0;
+    green_max <= '0;
 
-    for(integer i = 0; i < `LINE_LEN; i = i + 1) begin
-      pipe[0][i] = 8'd0;
-      pipe[1][i] = 8'd0;
-    end
-    for(integer i = 0; i < `NUM_PTR; i = i + 1) begin
-      memory[i] = 32'd0;
-    end
+    // internal regs
+    read_val <= '0;
 
     // AXI-S slave
     tready_rx <= 1'b0;
@@ -109,14 +76,19 @@ always @(posedge clk) begin
     tvalid_tx <= 1'b0;
   end else begin
     case (state)
-      PARSE: begin
+      PARSE_FRONT: begin
         tready_rx <= 1'b1;
+        red_max <= '0;
+        blue_max <= '0;
+        green_max <= '0;
 
         // this is the character for ':'
-        if(tvalid_rx && is_number) begin
+        if(tvalid_rx && tdata_rx == 8'h3A) begin
+          acc <= acc + pow;
           state <= READ_NUMBER_1;
         end
         if(tready_tx) begin
+          acc <= acc + pow;
           state <= OUTPUT_RESULT;
         end
       end
@@ -131,10 +103,7 @@ always @(posedge clk) begin
         if(tlast_rx) begin
           state <= PARSE_FRONT;
 
-          if(is_valid) begin
-            acc <= acc + line_count;
-          end
-          line_count <= line_count + 1;
+          pow <= red_max * blue_max * green_max;
         end
       end
       READ_NUMBER_2: begin
@@ -152,14 +121,14 @@ always @(posedge clk) begin
         tready_rx <= 1'b1;
 
         if(tvalid_rx && ~is_space) begin
-          if(`RED == tdata_rx && read_val > RED_CNT) begin
-            is_valid <= 1'b0;
+          if(`RED == tdata_rx && read_val > red_max) begin
+            red_max <= read_val;
           end
-          if(`BLUE == tdata_rx && read_val > BLUE_CNT) begin
-            is_valid <= 1'b0;
+          if(`BLUE == tdata_rx && read_val > blue_max) begin
+            blue_max <= read_val;
           end
-          if(`GREEN == tdata_rx && read_val > GREEN_CNT) begin
-            is_valid <= 1'b0;
+          if(`GREEN == tdata_rx && read_val > green_max) begin
+            green_max <= read_val;
           end
 
           state <= READ_NUMBER_1;
